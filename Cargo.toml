@@ -1,0 +1,8 @@
+[package]
+name = "rusty-2048"
+version = "0.1.0"
+authors = ["Brett Patterson <brett.patterson@rice.edu>"]
+
+[dependencies]
+rustbox = "0.9.0"
+rand = "0.3.15"
