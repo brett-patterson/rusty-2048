@@ -1,7 +1,9 @@
 use std::char;
 
-use rustbox::{RustBox, Color, Event, Key, RB_BOLD};
+use rustbox::{RustBox, Color, Event, Key, RB_NORMAL, RB_BOLD};
 use super::board::{Board, Cell, BOARD_ROWS, BOARD_COLS};
+
+const HELP_TEXT: &'static str = "Use the arrow keys to shift cells. Press 'q' to quit.";
 
 pub enum Action {
     Shift,
@@ -9,13 +11,13 @@ pub enum Action {
     None,
 }
 
-pub struct Display {
+pub struct View {
     term: RustBox,
 }
 
-impl Display {
+impl View {
     pub fn new() -> Self {
-        Display { term: RustBox::init(Default::default()).unwrap() }
+        View { term: RustBox::init(Default::default()).unwrap() }
     }
 
     pub fn draw(&self, board: &Board) {
@@ -35,9 +37,11 @@ impl Display {
                     Cell::Full(n) => char::from_digit(n, 10).unwrap(),
                     Cell::Empty => ' ',
                 };
-                self.term.print_char(j + 1, i + 1, RB_BOLD, Color::White, Color::Black, c);
+                self.term.print_char(j + 1, i + 1, RB_NORMAL, Color::White, Color::Black, c);
             }
         }
+
+        self.term.print(0, BOARD_ROWS + 2, RB_NORMAL, Color::White, Color::Black, HELP_TEXT);
 
         self.term.present();
     }
