@@ -1,7 +1,13 @@
 use std::char;
 
-use rustbox::{RustBox, Color, EventResult, RB_BOLD};
-use super::board::{Board, BoardCell, BOARD_ROWS, BOARD_COLS};
+use rustbox::{RustBox, Color, Event, Key, RB_BOLD};
+use super::board::{Board, Cell, BOARD_ROWS, BOARD_COLS};
+
+pub enum Action {
+    Shift,
+    End,
+    None,
+}
 
 pub struct Display {
     term: RustBox,
@@ -26,17 +32,42 @@ impl Display {
         for i in 0..BOARD_ROWS {
             for j in 0..BOARD_COLS {
                 let c = match board.get_cell((i, j)) {
-                    BoardCell::Full(n) => char::from_digit(n, 10).unwrap(),
-                    BoardCell::Empty => ' ',
+                    Cell::Full(n) => char::from_digit(n, 10).unwrap(),
+                    Cell::Empty => ' ',
                 };
-                self.term.print_char(i + 1, j + 1, RB_BOLD, Color::White, Color::Black, c);
+                self.term.print_char(j + 1, i + 1, RB_BOLD, Color::White, Color::Black, c);
             }
         }
 
         self.term.present();
     }
 
-    pub fn poll_event(&self) -> EventResult {
-        self.term.poll_event(false)
+    pub fn handle_event(&self, board: &mut Board) -> Action {
+         match self.term.poll_event(false) {
+            Ok(Event::KeyEvent(key)) => {
+                match key {
+                    Key::Char('q') => Action::End,
+                    Key::Left => {
+                        board.shift_left();
+                        Action::Shift
+                    },
+                    Key::Right => {
+                        board.shift_right();
+                        Action::Shift
+                    },
+                    Key::Up => {
+                        board.shift_up();
+                        Action::Shift
+                    },
+                    Key::Down => {
+                        board.shift_down();
+                        Action::Shift
+                    },
+                    _ => Action::None
+                }
+            }
+            Err(e) => panic!("{}", e),
+            _ => Action::None
+        }
     }
 }

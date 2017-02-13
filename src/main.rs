@@ -5,12 +5,11 @@ mod board;
 mod display;
 
 use board::Board;
-use display::Display;
-use rustbox::{Event, Key};
+use display::{Display, Action};
 
 fn main() {
     let mut board = Board::new();
-    let mut display = Display::new();
+    let display = Display::new();
 
     // Initialize board with two filled cells
     board.fill_cell();
@@ -18,17 +17,13 @@ fn main() {
 
     loop {
         display.draw(&board);
-
-        match display.poll_event() {
-            Ok(Event::KeyEvent(key)) => {
-                match key {
-                    Key::Char('q') => {
-                        break;
-                    }
-                    _ => {}
-                }
-            }
-            Err(e) => panic!("{}", e),
+        match display.handle_event(&mut board) {
+            Action::Shift => {
+                board.fill_cell();
+            },
+            Action::End => {
+                break;
+            },
             _ => {}
         }
     }
