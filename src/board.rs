@@ -38,15 +38,9 @@ impl Board {
     pub fn shift_left(&mut self) {
         for i in 0..BOARD_ROWS {
             for j in 1..BOARD_COLS {
-                if let Cell::Full(_) = self.get_cell((i, j)) {
-                    for k in 0..j {
-                        match self.get_cell((i, k)) {
-                            Cell::Empty => {
-                                self.move_cell((i, j), (i, k));
-                                break;
-                            },
-                            _ => {}
-                        }
+                for k in 0..j {
+                    if self.handle_shift((i, j), (i, k)) {
+                        break;
                     }
                 }
             }
@@ -56,15 +50,9 @@ impl Board {
     pub fn shift_right(&mut self) {
         for i in 0..BOARD_ROWS {
             for j in (0..BOARD_COLS - 1).rev() {
-                if let Cell::Full(_) = self.get_cell((i, j)) {
-                    for k in (j..BOARD_COLS).rev() {
-                        match self.get_cell((i, k)) {
-                            Cell::Empty => {
-                                self.move_cell((i, j), (i, k));
-                                break;
-                            },
-                            _ => {}
-                        }
+                for k in (j..BOARD_COLS).rev() {
+                    if self.handle_shift((i, j), (i, k)) {
+                        break;
                     }
                 }
             }
@@ -74,15 +62,9 @@ impl Board {
     pub fn shift_up(&mut self) {
         for j in 0..BOARD_COLS {
             for i in 1..BOARD_ROWS {
-                if let Cell::Full(_) = self.get_cell((i, j)) {
-                    for k in 0..i {
-                        match self.get_cell((k, j)) {
-                            Cell::Empty => {
-                                self.move_cell((i, j), (k, j));
-                                break;
-                            },
-                            _ => {}
-                        }
+                for k in 0..i {
+                    if self.handle_shift((i, j), (k, j)) {
+                        break;
                     }
                 }
             }
@@ -92,18 +74,36 @@ impl Board {
     pub fn shift_down(&mut self) {
         for j in 0..BOARD_COLS {
             for i in (0..BOARD_ROWS - 1).rev() {
-                if let Cell::Full(_) = self.get_cell((i, j)) {
-                    for k in (i..BOARD_ROWS).rev() {
-                        match self.get_cell((k, j)) {
-                            Cell::Empty => {
-                                self.move_cell((i, j), (k, j));
-                                break;
-                            },
-                            _ => {}
-                        }
+                for k in (i..BOARD_ROWS).rev() {
+                    if self.handle_shift((i, j), (k, j)) {
+                        break;
                     }
                 }
             }
+        }
+    }
+
+    fn handle_shift(&mut self, from: CellIdx, to: CellIdx) -> bool {
+        if let Cell::Full(n) = self.get_cell(from) {
+            match self.get_cell(to) {
+                Cell::Empty => {
+                    let from_cell = self.get_cell(from);
+                    self.set_cell(to, from_cell);
+                    self.set_cell(from, Cell::Empty);
+                    true
+                }
+                Cell::Full(other) => {
+                    if other == n {
+                        self.set_cell(to, Cell::Full(n * 2));
+                        self.set_cell(from, Cell::Empty);
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
+        } else {
+            false
         }
     }
 
@@ -118,13 +118,6 @@ impl Board {
     fn set_cell(&mut self, idx: CellIdx, value: Cell) {
         let (row, col) = idx;
         self.board[row][col] = value;
-    }
-
-    fn move_cell(&mut self, from: CellIdx, to: CellIdx) {
-        let (from_row, from_col) = from;
-        let (to_row, to_col) = to;
-        self.board[to_row][to_col] = self.board[from_row][from_col];
-        self.board[from_row][from_col] = Cell::Empty;
     }
 
     fn next_empty_cell(&self) -> Option<CellIdx> {

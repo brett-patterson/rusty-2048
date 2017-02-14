@@ -20,10 +20,10 @@ fn main() {
         match view.handle_event(&mut board) {
             Action::Shift => {
                 board.fill_cell();
-            },
+            }
             Action::End => {
                 break;
-            },
+            }
             _ => {}
         }
     }

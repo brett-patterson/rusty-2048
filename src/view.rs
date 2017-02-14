@@ -41,37 +41,42 @@ impl View {
             }
         }
 
-        self.term.print(0, BOARD_ROWS + 2, RB_NORMAL, Color::White, Color::Black, HELP_TEXT);
+        self.term.print(0,
+                        BOARD_ROWS + 2,
+                        RB_NORMAL,
+                        Color::White,
+                        Color::Black,
+                        HELP_TEXT);
 
         self.term.present();
     }
 
     pub fn handle_event(&self, board: &mut Board) -> Action {
-         match self.term.poll_event(false) {
+        match self.term.poll_event(false) {
             Ok(Event::KeyEvent(key)) => {
                 match key {
                     Key::Char('q') => Action::End,
                     Key::Left => {
                         board.shift_left();
                         Action::Shift
-                    },
+                    }
                     Key::Right => {
                         board.shift_right();
                         Action::Shift
-                    },
+                    }
                     Key::Up => {
                         board.shift_up();
                         Action::Shift
-                    },
+                    }
                     Key::Down => {
                         board.shift_down();
                         Action::Shift
-                    },
-                    _ => Action::None
+                    }
+                    _ => Action::None,
                 }
             }
             Err(e) => panic!("{}", e),
-            _ => Action::None
+            _ => Action::None,
         }
     }
 }
