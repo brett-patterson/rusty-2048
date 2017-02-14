@@ -7,6 +7,7 @@ const HELP_TEXT: &'static str = "Use the arrow keys to shift cells. Press 'q' to
 
 pub enum Action {
     Shift,
+    NoShift,
     End,
     None,
 }
@@ -57,20 +58,32 @@ impl View {
                 match key {
                     Key::Char('q') => Action::End,
                     Key::Left => {
-                        board.shift_left();
-                        Action::Shift
+                        if board.shift_left() {
+                            Action::Shift
+                        } else {
+                            Action::NoShift
+                        }
                     }
                     Key::Right => {
-                        board.shift_right();
-                        Action::Shift
+                        if board.shift_right() {
+                            Action::Shift
+                        } else {
+                            Action::NoShift
+                        }
                     }
                     Key::Up => {
-                        board.shift_up();
-                        Action::Shift
+                        if board.shift_up() {
+                            Action::Shift
+                        } else {
+                            Action::NoShift
+                        }
                     }
                     Key::Down => {
-                        board.shift_down();
-                        Action::Shift
+                        if board.shift_down() {
+                            Action::Shift
+                        } else {
+                            Action::NoShift
+                        }
                     }
                     _ => Action::None,
                 }

@@ -1,11 +1,6 @@
-extern crate rand;
-extern crate rustbox;
+extern crate rusty_2048;
 
-mod board;
-mod view;
-
-use board::Board;
-use view::{View, Action};
+use rusty_2048::{Board, View, Action};
 
 fn main() {
     let mut board = Board::new();
@@ -21,9 +16,11 @@ fn main() {
             Action::Shift => {
                 board.fill_cell();
             }
-            Action::End => {
+            Action::NoShift => {
+                println!("You lost!");
                 break;
             }
+            Action::End => break,
             _ => {}
         }
     }

@@ -5,7 +5,7 @@ pub const BOARD_COLS: usize = 4;
 
 pub type CellIdx = (usize, usize);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Cell {
     Empty,
     Full(u32),
@@ -25,6 +25,11 @@ impl Board {
         self.board[row][col]
     }
 
+    pub fn set_cell(&mut self, idx: CellIdx, value: Cell) {
+        let (row, col) = idx;
+        self.board[row][col] = value;
+    }
+
     pub fn fill_cell(&mut self) -> Option<CellIdx> {
         let next = self.next_empty_cell();
 
@@ -35,52 +40,64 @@ impl Board {
         next
     }
 
-    pub fn shift_left(&mut self) {
+    pub fn shift_left(&mut self) -> bool {
+        let mut shifted = false;
         for i in 0..BOARD_ROWS {
             for j in 1..BOARD_COLS {
                 for k in 0..j {
                     if self.handle_shift((i, j), (i, k)) {
+                        shifted = true;
                         break;
                     }
                 }
             }
         }
+        shifted
     }
 
-    pub fn shift_right(&mut self) {
+    pub fn shift_right(&mut self) -> bool {
+        let mut shifted = false;
         for i in 0..BOARD_ROWS {
             for j in (0..BOARD_COLS - 1).rev() {
                 for k in (j..BOARD_COLS).rev() {
                     if self.handle_shift((i, j), (i, k)) {
+                        shifted = true;
                         break;
                     }
                 }
             }
         }
+        shifted
     }
 
-    pub fn shift_up(&mut self) {
+    pub fn shift_up(&mut self) -> bool {
+        let mut shifted = false;
         for j in 0..BOARD_COLS {
             for i in 1..BOARD_ROWS {
                 for k in 0..i {
                     if self.handle_shift((i, j), (k, j)) {
+                        shifted = true;
                         break;
                     }
                 }
             }
         }
+        shifted
     }
 
-    pub fn shift_down(&mut self) {
+    pub fn shift_down(&mut self) -> bool {
+        let mut shifted = false;
         for j in 0..BOARD_COLS {
             for i in (0..BOARD_ROWS - 1).rev() {
                 for k in (i..BOARD_ROWS).rev() {
                     if self.handle_shift((i, j), (k, j)) {
+                        shifted = true;
                         break;
                     }
                 }
             }
         }
+        shifted
     }
 
     fn handle_shift(&mut self, from: CellIdx, to: CellIdx) -> bool {
@@ -113,11 +130,6 @@ impl Board {
         } else {
             2
         }
-    }
-
-    fn set_cell(&mut self, idx: CellIdx, value: Cell) {
-        let (row, col) = idx;
-        self.board[row][col] = value;
     }
 
     fn next_empty_cell(&self) -> Option<CellIdx> {
