@@ -3,7 +3,7 @@ extern crate rusty_2048;
 use rusty_2048::{Board, View, Action};
 
 fn main() {
-    let mut board = Board::new();
+    let mut board = Board::new(4, 4);
     let view = View::new();
 
     // Initialize board with two filled cells

@@ -1,7 +1,5 @@
 use rand::{self, Rng};
-
-pub const BOARD_ROWS: usize = 4;
-pub const BOARD_COLS: usize = 4;
+use ndarray::{Array, Array2};
 
 pub type CellIdx = (usize, usize);
 
@@ -11,23 +9,41 @@ pub enum Cell {
     Full(u32),
 }
 
+enum ShiftResult {
+    Shift,
+    Combine,
+    None,
+}
+
 pub struct Board {
-    board: [[Cell; BOARD_ROWS]; BOARD_COLS],
+    board: Array2<Cell>,
+    nrows: usize,
+    ncols: usize,
 }
 
 impl Board {
-    pub fn new() -> Self {
-        Board { board: [[Cell::Empty; BOARD_COLS]; BOARD_ROWS] }
+    pub fn new(nrows: usize, ncols: usize) -> Self {
+        Board {
+            board: Array::from_elem((nrows, ncols), Cell::Empty),
+            nrows: nrows,
+            ncols: ncols,
+        }
     }
 
-    pub fn get_cell(&self, idx: CellIdx) -> Cell {
-        let (row, col) = idx;
-        self.board[row][col]
+    pub fn nrows(&self) -> usize {
+        self.nrows
+    }
+
+    pub fn ncols(&self) -> usize {
+        self.ncols
+    }
+
+    pub fn get_cell(&self, idx: CellIdx) -> Option<Cell> {
+        self.board.get(idx).map(|c| c.clone())
     }
 
     pub fn set_cell(&mut self, idx: CellIdx, value: Cell) {
-        let (row, col) = idx;
-        self.board[row][col] = value;
+        self.board[idx] = value;
     }
 
     pub fn fill_cell(&mut self) -> Option<CellIdx> {
@@ -42,12 +58,22 @@ impl Board {
 
     pub fn shift_left(&mut self) -> bool {
         let mut shifted = false;
-        for i in 0..BOARD_ROWS {
-            for j in 1..BOARD_COLS {
-                for k in 0..j {
-                    if self.handle_shift((i, j), (i, k)) {
-                        shifted = true;
-                        break;
+        let mut boundary = 0;
+
+        for i in 0..self.nrows {
+            for j in 1..self.ncols {
+                for k in boundary..j {
+                    match self.shift_cell((i, j), (i, k)) {
+                        ShiftResult::Combine => {
+                            shifted = true;
+                            boundary = k + 1;
+                            break;
+                        }
+                        ShiftResult::Shift => {
+                            shifted = true;
+                            break;
+                        }
+                        ShiftResult::None => {}
                     }
                 }
             }
@@ -57,12 +83,22 @@ impl Board {
 
     pub fn shift_right(&mut self) -> bool {
         let mut shifted = false;
-        for i in 0..BOARD_ROWS {
-            for j in (0..BOARD_COLS - 1).rev() {
-                for k in (j..BOARD_COLS).rev() {
-                    if self.handle_shift((i, j), (i, k)) {
-                        shifted = true;
-                        break;
+        let mut boundary = self.ncols;
+
+        for i in 0..self.nrows {
+            for j in (0..self.ncols - 1).rev() {
+                for k in (j..boundary).rev() {
+                    match self.shift_cell((i, j), (i, k)) {
+                        ShiftResult::Combine => {
+                            shifted = true;
+                            boundary = k;
+                            break;
+                        }
+                        ShiftResult::Shift => {
+                            shifted = true;
+                            break;
+                        }
+                        ShiftResult::None => {}
                     }
                 }
             }
@@ -72,12 +108,22 @@ impl Board {
 
     pub fn shift_up(&mut self) -> bool {
         let mut shifted = false;
-        for j in 0..BOARD_COLS {
-            for i in 1..BOARD_ROWS {
-                for k in 0..i {
-                    if self.handle_shift((i, j), (k, j)) {
-                        shifted = true;
-                        break;
+        let mut boundary = 0;
+
+        for j in 0..self.ncols {
+            for i in 1..self.nrows {
+                for k in boundary..i {
+                    match self.shift_cell((i, j), (k, j)) {
+                        ShiftResult::Combine => {
+                            shifted = true;
+                            boundary = k + 1;
+                            break;
+                        }
+                        ShiftResult::Shift => {
+                            shifted = true;
+                            break;
+                        }
+                        ShiftResult::None => {}
                     }
                 }
             }
@@ -87,12 +133,22 @@ impl Board {
 
     pub fn shift_down(&mut self) -> bool {
         let mut shifted = false;
-        for j in 0..BOARD_COLS {
-            for i in (0..BOARD_ROWS - 1).rev() {
-                for k in (i..BOARD_ROWS).rev() {
-                    if self.handle_shift((i, j), (k, j)) {
-                        shifted = true;
-                        break;
+        let mut boundary = self.nrows;
+
+        for j in 0..self.ncols {
+            for i in (0..self.nrows - 1).rev() {
+                for k in (i..boundary).rev() {
+                    match self.shift_cell((i, j), (k, j)) {
+                        ShiftResult::Combine => {
+                            shifted = true;
+                            boundary = k;
+                            break;
+                        }
+                        ShiftResult::Shift => {
+                            shifted = true;
+                            break;
+                        }
+                        ShiftResult::None => {}
                     }
                 }
             }
@@ -100,27 +156,27 @@ impl Board {
         shifted
     }
 
-    fn handle_shift(&mut self, from: CellIdx, to: CellIdx) -> bool {
-        if let Cell::Full(n) = self.get_cell(from) {
+    fn shift_cell(&mut self, from: CellIdx, to: CellIdx) -> ShiftResult {
+        if let Some(Cell::Full(n)) = self.get_cell(from) {
             match self.get_cell(to) {
-                Cell::Empty => {
-                    let from_cell = self.get_cell(from);
-                    self.set_cell(to, from_cell);
+                Some(Cell::Empty) => {
+                    self.set_cell(to, Cell::Full(n));
                     self.set_cell(from, Cell::Empty);
-                    true
+                    ShiftResult::Shift
                 }
-                Cell::Full(other) => {
+                Some(Cell::Full(other)) => {
                     if other == n {
                         self.set_cell(to, Cell::Full(n * 2));
                         self.set_cell(from, Cell::Empty);
-                        true
+                        ShiftResult::Combine
                     } else {
-                        false
+                        ShiftResult::None
                     }
                 }
+                None => ShiftResult::None,
             }
         } else {
-            false
+            ShiftResult::None
         }
     }
 
@@ -139,10 +195,10 @@ impl Board {
     fn empty_cells(&self) -> Vec<CellIdx> {
         let mut result: Vec<CellIdx> = Vec::new();
 
-        for i in 0..BOARD_ROWS {
-            for j in 0..BOARD_COLS {
+        for i in 0..self.nrows {
+            for j in 0..self.ncols {
                 match self.get_cell((i, j)) {
-                    Cell::Empty => result.push((i, j)),
+                    Some(Cell::Empty) => result.push((i, j)),
                     _ => {}
                 }
             }
